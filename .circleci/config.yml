@@ -29,13 +29,34 @@ jobs:
           name: "Install dependencies"
           command: "npm install"
 
-# Orchestrate jobs using workflows
-# See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
+  deploy-to-netlify:
+    docker:
+      - image: cimg/node:current
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.14
+      - run:
+          name: "Build Docker image"
+          command: "docker build -t react-vite-app:latest ."
+      - run:
+          name: "Install dependencies"
+          command: "npm install"
+      - run:
+          name: "Build project"
+          command: "npm run build"
+      - run:
+          name: "Install Netlify CLI"
+          command: "npm install -g netlify-cli"
+      - run:
+          name: "Deploy to Netlify"
+          command: "netlify deploy --prod --dir=dist --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID"
+
 workflows:
-  say-hello-workflow:
+  main-workflow:
     jobs:
       - say-hello
-
-  install-dependencies-workflow:
-    jobs:
       - install-dependencies
+      - deploy-to-netlify:
+          requires:
+            - install-dependencies
